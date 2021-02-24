@@ -1,0 +1,61 @@
+安装docker：
+
+yum -y install curl
+curl -sSL https://get.docker.com/ | sh
+systemctl start docker
+systemctl enable docker
+
+安装docker-compose：
+
+curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+
+新建docker-compose.yml：
+
+mkdir -p /opt/bitwarden && cd /opt/bitwarden && nano /opt/bitwarden/docker-compose.yml
+
+写入以下配置：
+
+version: "3"
+
+services:
+  bitwarden:
+    image: bitwardenrs/server
+    restart: always
+    volumes:
+      - ./bw-data:/data
+    ports:
+      - 8080:80
+      - 3012:3012
+    environment:
+      WEBSOCKET_ENABLED: "true"
+      SIGNUPS_ALLOWED: "true"
+
+
+启动：
+
+docker-compose up -d
+
+打开你的站点域名首先注册一个账号，注册完成之后，可以将注册功能关闭掉，编辑docker-compose.yml：
+
+nano /opt/bitwarden/docker-compose.yml
+改动environment:下面的SIGNUPS_ALLOWED值为false：
+
+   SIGNUPS_ALLOWED: "false"
+   
+停止运行，然后再启动即可应用新的环境变量：
+
+docker-compose stop
+docker-compose up -d
+
+
+CADDY2加入：
+
+                                            "handle": [
+                                                {
+                                                    "handler": "reverse_proxy",
+                                                    "upstreams": [
+                                                        {
+                                                            "dial": "0.0.0.0:8080"
+                                                        }
+                                                    ]
