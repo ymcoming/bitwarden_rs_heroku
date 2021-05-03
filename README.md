@@ -1,4 +1,4 @@
-# Bitwarden_rs on Heroku for Free !
+# Bitwarden_rs on Heroku for Free!
 Deploy Bitwarden_rs in Heroku for free via Github1
 
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/davidjameshowell/bitwarden_rs_heroku/BitwardenRSOnHerokuAIO/deploy?label=Deploy%20Bitwarden_RS&style=for-the-badge)
