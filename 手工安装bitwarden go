@@ -1,6 +1,11 @@
 安装docker：
 
-yum -y install curl
+apt install curl
+
+oracle ubuntu需先安装以下KEY：
+apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 7638D0442B90D010
+apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 04EE7237B7D453EC
+
 curl -sSL https://get.docker.com/ | sh
 systemctl start docker
 systemctl enable docker
