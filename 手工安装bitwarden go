@@ -50,6 +50,8 @@ nano /opt/bitwarden/docker-compose.yml
    
 停止运行，然后再启动即可应用新的环境变量：
 
+操作命令必须在cd /opt/bitwarden 目录下运行 !
+
 docker-compose stop
 docker-compose up -d
 
