@@ -3,11 +3,12 @@ set -euo pipefail
 
 SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-BITWARDEN_RS_FOLDER="bitwarden_rs"
+BITWARDEN_RS_FOLDER="vaultwarden"
 CREATE_APP_NAME=" "
 ENABLE_AUTOBUS_BACKUP=0
 ENABLE_DUO=0
 GIT_HASH="main"
+USE_PSQL=0
 HEROKU_VERIFIED=0
 OFFSITE_HEROKU_DB=" "
 STRATEGY_TYPE="deploy"
@@ -18,7 +19,7 @@ rm -rf ./${BITWARDEN_RS_FOLDER}
 function git_clone {
     GIT_HASH=$1
     echo "Clone current bitwarden_rs with depth 1"
-    git clone --depth 1 https://github.com/dani-garcia/bitwarden_rs.git
+    git clone --depth 1 https://github.com/dani-garcia/vaultwarden.git
     cd ./${BITWARDEN_RS_FOLDER}
     git checkout "${GIT_HASH}"
     cd ..
@@ -36,21 +37,29 @@ function heroku_bootstrap {
     heroku container:login
 
     echo "We must create a Heroku application to deploy to first."
-    APP_NAME=$(heroku create "${CREATE_APP_NAME}" --json | jq --raw-output '.name')
-
-    if [ "${HEROKU_VERIFIED}" -eq "1" ]
+    APP_NAME=$(heroku create "${CREATE_APP_NAME}" ${HEROKU_CREATE_OPTIONS} --json | jq --raw-output '.name')
+    if [ "$USE_PSQL" -eq "1" ]
     then
-        echo "We will use JawsDB Maria edition, which is free and sufficient for a small instance"
-        heroku addons:create jawsdb -a "$APP_NAME"
+        echo "We will use Heroku Postgres, which is free and sufficient for a small instance"
+        heroku addons:create heroku-postgresql -a "$APP_NAME"
         
         echo "Checking for additional addons"
         check_addons
-        
-        echo "Now we use the JAWS DB config as the database URL for Bitwarden"
-        echo "Supressing output due to sensitive nature."
-        heroku config:set DATABASE_URL="$(heroku config:get JAWSDB_URL -a "${APP_NAME}")" -a "${APP_NAME}" > /dev/null
     else
-        heroku config:set DATABASE_URL="${OFFSITE_HEROKU_DB}" -a "${APP_NAME}" > /dev/null
+        if [ "${HEROKU_VERIFIED}" -eq "1" ]
+        then
+            echo "We will use JawsDB Maria edition, which is free and sufficient for a small instance"
+            heroku addons:create jawsdb -a "$APP_NAME"
+        
+            echo "Checking for additional addons"
+            check_addons
+        
+            echo "Now we use the JAWS DB config as the database URL for Bitwarden"
+            echo "Supressing output due to sensitive nature."
+            heroku config:set DATABASE_URL="$(heroku config:get JAWSDB_URL -a "${APP_NAME}")" -a "${APP_NAME}" > /dev/null
+        else
+            heroku config:set DATABASE_URL="${OFFSITE_HEROKU_DB}" -a "${APP_NAME}" > /dev/null
+        fi
     fi
     
     echo "Additionally set an Admin Token too in the event additional options are needed."
@@ -59,6 +68,7 @@ function heroku_bootstrap {
 
     echo "And set DB connections to seven in order not to saturate the free DB"
     heroku config:set DATABASE_MAX_CONNS=7 -a "${APP_NAME}"
+    heroku config:set DOMAIN="https://${APP_NAME}.herokuapp.com" -a "${APP_NAME}"
 }
 
 function check_addons {
@@ -110,13 +120,14 @@ function help {
     printf "Welcome to help!\Use option -a for app name,\n-d <0/1> to enable duo,\n -g to set a git hash to clone bitwarden_rs from,\n and -t to specify if deployment or update!"
 }
 
-while getopts a:b:d:g:t:u:v: flag
+while getopts a:b:d:g:p:t:u:v: flag
 do
     case "${flag}" in
         a) CREATE_APP_NAME=${OPTARG};;
         b) ENABLE_AUTOBUS_BACKUP=${OPTARG};;
         d) ENABLE_DUO=${OPTARG};;
         g) GIT_HASH=${OPTARG};;
+        p) USE_PSQL=${OPTARG};;
         t) STRATEGY_TYPE=${OPTARG};;
         u) OFFSITE_HEROKU_DB=${OPTARG};;
         v) HEROKU_VERIFIED=${OPTARG};;
@@ -126,6 +137,7 @@ done
 echo "Enable Duo: $ENABLE_DUO";
 echo "Create App_Name: $CREATE_APP_NAME";
 echo "Git Hash: $GIT_HASH";
+echo "Use PostgreSQL: $USE_PSQL";
 echo "Heroku Verified: $HEROKU_VERIFIED";
 echo "Enable Autobus Backup: $ENABLE_AUTOBUS_BACKUP";
 
