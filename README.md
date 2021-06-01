@@ -1,5 +1,3 @@
-请注意，在05/21/2021这个项目将重新命名，以便跟上游的软件。 新名称将是 vaultwarden_heroku 为了将改名为与原始项目
-
 # Bitwarden_rs on Heroku for Free!
 Deploy Bitwarden_rs in Heroku for free via Github1
 
